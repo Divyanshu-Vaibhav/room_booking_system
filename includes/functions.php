@@ -1,4 +1,7 @@
 <?php
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 session_start();
 
 // Check if user is logged in
@@ -6,7 +9,7 @@ function isLoggedIn() {
     return isset($_SESSION['user_id']);
 }
 
-// Redirect to a specific page
+// Redirecting 
 function redirect($url) {
     header("Location: $url");
     exit();
@@ -68,6 +71,31 @@ function addToWaitlist($conn, $room_id, $user_id, $start_time, $end_time) {
         return false;
     }
 }
+// Process waitlist for a room
+function processWaitlist($conn, $room_id, $start_time, $end_time) {
+    // Find the first person in the waitlist for this room and time
+    $sql = "SELECT id, user_id FROM waitlist 
+            WHERE room_id = ? AND start_time = ? AND end_time = ? AND status = 'waiting' 
+            ORDER BY id ASC LIMIT 1";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("iss", $room_id, $start_time, $end_time);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($row = $result->fetch_assoc()) {
+        // Update waitlist entry to notified
+        $update_sql = "UPDATE waitlist SET status = 'notified' WHERE id = ?";
+        $update_stmt = $conn->prepare($update_sql);
+        $update_stmt->bind_param("i", $row['id']);
+        $update_stmt->execute();
+        
+        // In a real system, you would send an email or notification here
+        return true;
+    }
+    
+    return false;
+}
+
 
 // Release expired blocks
 function releaseExpiredBlocks($conn) {
@@ -90,6 +118,8 @@ function releaseExpiredBlocks($conn) {
         $update_stmt->bind_param("i", $row['id']);
         if ($update_stmt->execute()) {
             $released_count++;
+            processWaitlist($conn, $row['room_id'], $row['start_time'], $row['end_time']);
+
         }
     }
     
