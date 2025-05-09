@@ -12,12 +12,6 @@ A PHP-based room booking system that allows users to select and temporarily bloc
 - Booking confirmation process
 - My Bookings page to view and manage bookings
 
-## Requirements
-
-- PHP 7.0 or higher
-- MySQL 5.6 or higher
-- Web server (Apache/Nginx)
-
 ## Installation
 
 1. Clone the repository to your web server's document root
